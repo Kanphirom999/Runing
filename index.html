@@ -1,0 +1,675 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { 
+  Heart, 
+  Map as MapIcon, 
+  AlertTriangle, 
+  Navigation, 
+  Activity, 
+  ShieldCheck, 
+  User, 
+  Clock,
+  PhoneCall,
+  MessageSquare,
+  Send,
+  ShieldAlert,
+  Sunrise,
+  Sun,
+  Sunset as SunsetIcon,
+  Moon,
+  Scale,
+  Ruler,
+  ChevronRight,
+  Info,
+  Play,
+  Square,
+  Trophy,
+  RotateCcw,
+  Eye,
+  Zap,
+  MapPin,
+  CloudRain,
+  Wind,
+  Flame,
+  TrendingDown,
+  Timer,
+  Watch,
+  Bluetooth,
+  CheckCircle2
+} from 'lucide-react';
+
+// --- Theme Config ---
+const getTheme = (hour) => {
+  if (hour >= 5 && hour < 8) return {
+    name: 'Sunrise',
+    bg: 'bg-gradient-to-br from-orange-100 via-rose-100 to-amber-50',
+    card: 'bg-white/70 backdrop-blur-xl',
+    text: 'text-slate-800',
+    accent: 'text-orange-600',
+    primary: 'from-orange-400 to-rose-400',
+    mapBg: 'bg-orange-100/50',
+    icon: <Sunrise className="w-5 h-5 text-orange-500 animate-pulse" />,
+    greeting: 'สวัสดีตอนเช้า',
+    glow: 'shadow-orange-200/50'
+  };
+  if (hour >= 8 && hour < 16) return {
+    name: 'Daylight',
+    bg: 'bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50',
+    card: 'bg-white/80 backdrop-blur-xl',
+    text: 'text-slate-900',
+    accent: 'text-blue-600',
+    primary: 'from-blue-500 to-cyan-400',
+    mapBg: 'bg-blue-100/50',
+    icon: <Sun className="w-5 h-5 text-yellow-500 rotate-slow" />,
+    greeting: 'วิ่งสู้แดดกันเถอะ',
+    glow: 'shadow-blue-200/50'
+  };
+  if (hour >= 16 && hour < 19) return {
+    name: 'Sunset',
+    bg: 'bg-gradient-to-br from-indigo-100 via-purple-100 to-rose-100',
+    card: 'bg-white/70 backdrop-blur-xl',
+    text: 'text-slate-800',
+    accent: 'text-rose-600',
+    primary: 'from-rose-500 to-indigo-600',
+    mapBg: 'bg-rose-50/50',
+    icon: <SunsetIcon className="w-5 h-5 text-rose-500" />,
+    greeting: 'ยามเย็นที่สดใส',
+    glow: 'shadow-purple-200/50'
+  };
+  return {
+    name: 'Night',
+    bg: 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black',
+    card: 'bg-slate-900/60 backdrop-blur-2xl',
+    text: 'text-slate-100',
+    accent: 'text-blue-400',
+    primary: 'from-blue-600 to-indigo-700',
+    mapBg: 'bg-slate-800/40',
+    icon: <Moon className="w-5 h-5 text-blue-400 animate-pulse" />,
+    greeting: 'วิ่งกลางคืนระวังด้วยนะ',
+    glow: 'shadow-blue-900/40'
+  };
+};
+
+const formatTimer = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s].map(v => v < 10 ? "0" + v : v).join(":");
+};
+
+// --- Main Components ---
+
+const HealthEngine = ({ theme, weight, height, setWeight, setHeight }) => {
+  const [showSettings, setShowSettings] = useState(false);
+
+  const analysis = useMemo(() => {
+    const hMeter = height / 100;
+    const bmi = (weight / (hMeter * hMeter)).toFixed(1);
+    const idealWeight = (22 * (hMeter * hMeter)).toFixed(1);
+    const diff = (weight - idealWeight).toFixed(1);
+    
+    let targetDist = 5.0;
+    let pace = "6:30";
+    let zone = "Zone 2 (Fat Burn)";
+
+    if (bmi >= 25) { 
+        targetDist = 3.5; 
+        pace = "8:00"; 
+        zone = "Zone 2 (Heart Care)";
+    } else if (bmi < 18.5) { 
+        targetDist = 3.0; 
+        pace = "7:30"; 
+        zone = "Recovery Run";
+    } else {
+        targetDist = 5.0;
+        pace = "6:15";
+        zone = "Endurance Run";
+    }
+
+    return { bmi, idealWeight, diff, targetDist, pace, zone };
+  }, [weight, height]);
+
+  return (
+    <div className={`mb-6 p-6 rounded-[2.5rem] ${theme.card} border ${theme.name === 'Night' ? 'border-white/5 shadow-blue-900/20' : 'border-white shadow-2xl'} relative overflow-hidden`}>
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <h2 className={`font-black flex items-center gap-2 text-sm uppercase tracking-widest ${theme.text}`}>
+          <Scale className={`w-5 h-5 ${theme.accent}`} />
+          Health & Route Engine
+        </h2>
+        <button onClick={() => setShowSettings(!showSettings)} className="bg-slate-500/10 p-1.5 px-4 rounded-full text-blue-500 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-blue-500 hover:text-white">
+          {showSettings ? 'Confirm' : 'Setup Profile'}
+        </button>
+      </div>
+
+      {showSettings ? (
+        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300 relative z-10">
+          <div className="bg-white/5 p-4 rounded-3xl border border-white/10">
+            <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase tracking-widest">Weight (kg)</label>
+            <input 
+              type="number" 
+              value={weight} 
+              onChange={(e) => setWeight(parseFloat(e.target.value))}
+              className={`w-full bg-transparent outline-none text-2xl font-black ${theme.text}`}
+            />
+          </div>
+          <div className="bg-white/5 p-4 rounded-3xl border border-white/10">
+            <label className="text-[10px] font-black text-slate-400 block mb-2 uppercase tracking-widest">Height (cm)</label>
+            <input 
+              type="number" 
+              value={height} 
+              onChange={(e) => setHeight(parseFloat(e.target.value))}
+              className={`w-full bg-transparent outline-none text-2xl font-black ${theme.text}`}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6 relative z-10">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-white/5 to-white/10 p-5 rounded-[2rem] border border-white/10 text-center">
+              <p className="text-[10px] text-slate-400 font-black mb-1 uppercase tracking-widest">BMI Status</p>
+              <p className={`text-3xl font-black ${theme.text}`}>{analysis.bmi}</p>
+              <p className={`text-[9px] font-bold mt-1 ${parseFloat(analysis.bmi) > 23 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                {parseFloat(analysis.bmi) > 23 ? 'Above Range' : 'Healthy Range'}
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-white/5 to-white/10 p-5 rounded-[2rem] border border-white/10 text-center">
+              <p className="text-[10px] text-slate-400 font-black mb-1 uppercase tracking-widest">Ideal Weight</p>
+              <p className={`text-3xl font-black ${theme.text}`}>{analysis.idealWeight}</p>
+              <div className="flex items-center justify-center gap-1 mt-1 text-blue-500">
+                 <TrendingDown className="w-3 h-3" />
+                 <p className="text-[9px] font-bold uppercase tracking-widest">{analysis.diff > 0 ? `Target: -${analysis.diff}kg` : 'On track'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className={`p-5 rounded-[2rem] border ${theme.name === 'Night' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+             <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-500 rounded-xl">
+                   <Timer className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                   <p className={`text-[10px] font-black uppercase tracking-widest ${theme.text}`}>AI Recommendation</p>
+                   <p className="text-[11px] font-bold text-blue-500">{analysis.zone}</p>
+                </div>
+             </div>
+             <div className="flex justify-between items-center bg-white/5 p-3 rounded-2xl">
+                <div className="text-center flex-1">
+                   <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Target Dist.</p>
+                   <p className={`font-black ${theme.text}`}>{analysis.targetDist} km</p>
+                </div>
+                <div className="w-px h-6 bg-slate-500/20"></div>
+                <div className="text-center flex-1">
+                   <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Advised Pace</p>
+                   <p className={`font-black ${theme.text}`}>{analysis.pace} /km</p>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SafetyMap = ({ locationRisk, theme, aiAnalyzing }) => {
+  return (
+    <div className={`relative h-72 rounded-[3rem] overflow-hidden border-2 ${theme.name === 'Night' ? 'border-white/10' : 'border-white shadow-2xl'}`}>
+      <div className={`absolute inset-0 transition-colors duration-1000 ${theme.mapBg}`}>
+        {/* Environment decorations */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+           <div className={`absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] ${theme.name === 'Night' ? 'from-blue-500/20 to-transparent' : 'from-slate-500/20 to-transparent'}`}></div>
+        </div>
+
+        {/* Dynamic Map SVGs */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 300">
+           {/* Alternative Route (Gray) */}
+           <path 
+             d="M 50,150 L 150,100 L 250,100 L 350,150" 
+             stroke={theme.name === 'Night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 
+             strokeWidth="4" 
+             fill="none" 
+             strokeDasharray="5 5"
+           />
+           
+           {/* MAIN ROUTE */}
+           {/* Safe Part */}
+           <path 
+             d="M 50,150 Q 100,200 150,180" 
+             stroke="#3B82F6" 
+             strokeWidth="6" 
+             fill="none" 
+             strokeLinecap="round"
+             className="animate-[dash_20s_linear_infinite]"
+             strokeDasharray="12 12"
+           />
+           
+           {/* RED WARNING ROUTE (High Activity/Risk) */}
+           <path 
+             d="M 150,180 Q 250,130 300,180" 
+             stroke="#EF4444" 
+             strokeWidth="8" 
+             fill="none" 
+             strokeLinecap="round"
+             className="animate-pulse"
+             style={{ filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.6))' }}
+           />
+           
+           {/* Normal Route Continuation */}
+           <path 
+             d="M 300,180 T 380,150" 
+             stroke="#3B82F6" 
+             strokeWidth="6" 
+             fill="none" 
+             strokeLinecap="round"
+             strokeDasharray="12 12"
+           />
+        </svg>
+
+        {/* Heatmap Points */}
+        <div className="absolute top-[160px] left-[220px] group">
+            <div className="w-12 h-12 bg-red-500/20 rounded-full animate-ping"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_15px_#ef4444]"></div>
+            </div>
+        </div>
+
+        {/* User Marker */}
+        <div className="absolute top-[150px] left-[50px] -translate-x-1/2 -translate-y-1/2">
+            <div className="w-8 h-8 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center shadow-xl animate-bounce">
+                <Navigation className="w-4 h-4 text-white fill-white rotate-45" />
+            </div>
+        </div>
+      </div>
+
+      {/* Legend & Stats Overlay */}
+      <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
+         <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            <span className="text-[9px] font-black text-white uppercase tracking-widest">Risk Area (Reported)</span>
+         </div>
+         <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/20 flex items-center gap-2">
+            <Flame className="w-3 h-3 text-orange-500" />
+            <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest">354 Cal Route</span>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+const HealthCard = ({ bpm, theme, isWatchConnected }) => {
+  const isDanger = bpm > 165;
+  return (
+    <div className={`p-6 rounded-[2.5rem] transition-all duration-700 shadow-2xl relative overflow-hidden ${isDanger ? 'bg-red-600 scale-105' : theme.card + ' border border-white/10'}`}>
+      {isDanger && <div className="absolute inset-0 bg-white/10 animate-pulse"></div>}
+      <div className="flex justify-between items-start mb-4 relative z-10">
+        <div className={`${isDanger ? 'bg-white/20' : 'bg-red-500/10'} p-3 rounded-2xl`}>
+          <Heart className={`w-6 h-6 ${isDanger ? 'text-white' : 'text-red-500 animate-bounce'}`} fill={isDanger ? "white" : "currentColor"} />
+        </div>
+        <div className="flex flex-col items-end">
+            <span className={`text-[8px] uppercase tracking-widest font-black ${isDanger ? 'text-white/80' : 'text-slate-400'}`}>Source</span>
+            <span className={`text-[9px] font-black uppercase ${isDanger ? 'text-white' : 'text-blue-500'}`}>
+                {isWatchConnected ? 'Apple Watch' : 'iPhone Sensor'}
+            </span>
+        </div>
+      </div>
+      <div className="flex items-baseline gap-1 relative z-10">
+        <span className={`text-5xl font-black tracking-tighter ${isDanger ? 'text-white' : theme.text}`}>{bpm}</span>
+        <span className={`${isDanger ? 'text-white/70' : 'text-slate-400'} text-xs font-bold uppercase tracking-widest`}>Bpm</span>
+      </div>
+    </div>
+  );
+};
+
+const ReportPanel = ({ onSend, theme }) => {
+  const [text, setText] = useState("");
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    onSend(text);
+    setText("");
+  };
+  return (
+    <div className={`mt-6 p-6 rounded-[2.5rem] ${theme.card} border ${theme.name === 'Night' ? 'border-white/5 shadow-inner' : 'border-white shadow-2xl'}`}>
+      <div className="flex items-center justify-between mb-4 px-1">
+        <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-500/10 rounded-xl">
+                <ShieldAlert className={`w-4 h-4 ${theme.accent}`} />
+            </div>
+            <h3 className={`font-black text-[11px] ${theme.text} uppercase tracking-widest`}>Community Radar</h3>
+        </div>
+        <div className="flex items-center gap-1.5">
+           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+           <span className="text-[9px] font-black text-green-500 uppercase tracking-tighter">4 active runners</span>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="relative group">
+        <input 
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="รายงานสิ่งผิดปกติ หรือจุดเสี่ยง..."
+          className={`w-full p-4.5 pr-16 rounded-[2rem] text-[12px] font-bold outline-none transition-all border ${
+            theme.name === 'Night' ? 'bg-white/5 border-white/10 text-white focus:bg-white/10' : 'bg-slate-50 border-slate-100 text-slate-900 focus:bg-white focus:border-blue-200'
+          }`}
+        />
+        <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-600/30 hover:scale-110 active:scale-95 transition-all">
+          <Send className="w-4 h-4" />
+        </button>
+      </form>
+    </div>
+  );
+};
+
+// --- App Shell ---
+
+export default function App() {
+  const [weight, setWeight] = useState(75);
+  const [height, setHeight] = useState(175);
+  const [bpm, setBpm] = useState(110);
+  const [risk, setRisk] = useState(25);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  
+  const [isRunning, setIsRunning] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [steps, setSteps] = useState(0);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
+
+  // Apple Watch Integration States
+  const [watchStatus, setWatchStatus] = useState('idle'); // idle, connecting, connected
+  const [lastHaptic, setLastHaptic] = useState(null);
+
+  const theme = useMemo(() => getTheme(currentTime.getHours()), [currentTime]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (isRunning) {
+      interval = setInterval(() => {
+        setSeconds(s => s + 1);
+        setDistance(d => d + 0.002); 
+        setSteps(st => st + (Math.random() > 0.3 ? 2 : 1));
+        
+        // ถ้าต่อนาฬิกา Heart Rate จะเสถียรกว่า (จำลอง)
+        setBpm(p => {
+            const base = watchStatus === 'connected' ? 135 : 120;
+            return Math.max(base, Math.min(p + (Math.random() > 0.5 ? 1 : -1), 175));
+        });
+      }, 1000);
+    } else {
+      clearInterval(interval);
+      setBpm(p => Math.max(80, Math.min(p - 1, 110)));
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, watchStatus]);
+
+  const handleToggleRun = () => {
+    if (isRunning) {
+      setIsRunning(false);
+      setShowSummary(true);
+      if (watchStatus === 'connected') triggerWatchHaptic('finish');
+    } else {
+      setIsRunning(true);
+      setShowSummary(false);
+      if (watchStatus === 'connected') triggerWatchHaptic('start');
+    }
+  };
+
+  const handleConnectWatch = () => {
+    setWatchStatus('connecting');
+    setTimeout(() => {
+        setWatchStatus('connected');
+    }, 2000);
+  };
+
+  const triggerWatchHaptic = (type) => {
+    setLastHaptic(type);
+    setTimeout(() => setLastHaptic(null), 2000);
+  };
+
+  const handleReport = (text) => {
+    setAiAnalyzing(true);
+    setTimeout(() => {
+      const isDanger = ["มืด", "คน", "อันตราย", "ไฟ", "แปลก", "เปลี่ยว", "สุนัข"].some(key => text.includes(key));
+      if (isDanger) {
+          setRisk(90);
+          if (watchStatus === 'connected') triggerWatchHaptic('alert');
+      } else {
+          setRisk(20);
+      }
+      setAiAnalyzing(false);
+    }, 1500);
+  };
+
+  const resetSession = () => {
+    setSeconds(0);
+    setDistance(0);
+    setSteps(0);
+    setShowSummary(false);
+    setRisk(25);
+  };
+
+  const timeStr = currentTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  return (
+    <div className={`min-h-screen ${theme.bg} transition-all duration-1000 p-5 font-sans max-w-md mx-auto relative overflow-x-hidden pb-44 selection:bg-blue-500 selection:text-white`}>
+      <style>{`
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+        .rotate-slow { animation: spin 10s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+
+      {/* Apple Watch Pairing Status Bar */}
+      <div className={`mb-4 flex items-center justify-between px-5 py-3 rounded-2xl backdrop-blur-md border transition-all duration-500 ${watchStatus === 'connected' ? 'bg-orange-500/10 border-orange-500/20' : 'bg-white/5 border-white/10'}`}>
+         <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-xl transition-all ${watchStatus === 'connected' ? 'bg-orange-500 shadow-lg shadow-orange-500/30' : 'bg-slate-500/20'}`}>
+                <Watch className={`w-4 h-4 ${watchStatus === 'connected' ? 'text-white' : 'text-slate-400'}`} />
+            </div>
+            <div>
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Companion Device</p>
+                <button 
+                  onClick={watchStatus === 'idle' ? handleConnectWatch : null}
+                  className={`text-[10px] font-bold flex items-center gap-1 ${watchStatus === 'connected' ? 'text-orange-500' : 'text-blue-500 underline'}`}
+                >
+                    {watchStatus === 'connected' ? 'Apple Watch Ultra Connected' : watchStatus === 'connecting' ? 'Searching...' : 'Pair Apple Watch'}
+                    {watchStatus === 'connected' && <CheckCircle2 className="w-3 h-3" />}
+                </button>
+            </div>
+         </div>
+         {watchStatus === 'connected' && (
+            <div className="flex items-center gap-1 text-[10px] font-black text-green-500">
+                <Bluetooth className="w-3 h-3" />
+                SYNCED
+            </div>
+         )}
+      </div>
+      
+      <header className={`flex justify-between items-center mb-6 p-4 rounded-3xl backdrop-blur-md border ${theme.name === 'Night' ? 'bg-white/5 border-white/10 shadow-blue-900/40' : 'bg-white/40 border-white/40 shadow-xl'}`}>
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-2xl ${theme.name === 'Night' ? 'bg-blue-500/20' : 'bg-white shadow-inner'}`}>
+            {theme.icon}
+          </div>
+          <div>
+            <h1 className={`text-lg font-black tracking-tight ${theme.text}`}>{theme.greeting}</h1>
+            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${theme.name === 'Night' ? 'text-blue-200/40' : 'text-slate-400'}`}>Smart Companion</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className={`text-xl font-mono font-black ${theme.text}`}>{timeStr}</div>
+          <div className="flex items-center justify-end gap-1.5 mt-0.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-[8px] text-green-500 font-black uppercase tracking-widest">Live Sync</span>
+          </div>
+        </div>
+      </header>
+
+      <HealthEngine theme={theme} weight={weight} height={height} setWeight={setWeight} setHeight={setHeight} />
+
+      {/* Main Stats with Steps */}
+      <div className={`mb-6 p-8 rounded-[3rem] ${theme.card} border ${theme.name === 'Night' ? 'border-white/5 shadow-blue-950/40' : 'border-white shadow-2xl'} text-center relative overflow-hidden`}>
+        {lastHaptic && (
+            <div className="absolute inset-0 bg-orange-500/10 animate-pulse flex items-center justify-center z-20">
+                <div className="bg-orange-500 text-white px-4 py-1 rounded-full text-[10px] font-black">HAPTIC FEEDBACK</div>
+            </div>
+        )}
+        <div className={`absolute -top-10 -left-10 w-48 h-48 rounded-full blur-[80px] opacity-20 ${isRunning ? 'bg-green-400' : 'bg-blue-400'}`}></div>
+        
+        <div className="flex justify-center items-center gap-2 mb-4 relative z-10">
+          <Clock className={`w-4 h-4 ${isRunning ? 'text-green-500' : theme.accent}`} />
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Session Progress</span>
+        </div>
+        <h2 className={`text-7xl font-mono font-black mb-8 tracking-tighter ${theme.text} relative z-10`}>
+          {formatTimer(seconds)}
+        </h2>
+        <div className="grid grid-cols-3 gap-2 border-t border-slate-500/10 pt-8 relative z-10">
+          <div className="flex flex-col items-center">
+            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Distance</p>
+            <p className={`text-2xl font-black ${theme.text}`}>{distance.toFixed(2)} <span className="text-[8px] font-bold opacity-40">KM</span></p>
+          </div>
+          <div className="w-px h-8 bg-slate-500/10 self-center"></div>
+          <div className="flex flex-col items-center">
+            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Steps</p>
+            <p className={`text-2xl font-black ${theme.text}`}>{steps.toLocaleString()}</p>
+          </div>
+          <div className="w-px h-8 bg-slate-500/10 self-center"></div>
+          <div className="flex flex-col items-center">
+            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Energy</p>
+            <p className={`text-2xl font-black ${theme.text}`}>{(distance * 65).toFixed(0)} <span className="text-[8px] font-bold opacity-40">KCAL</span></p>
+          </div>
+        </div>
+      </div>
+
+      <section className="grid grid-cols-2 gap-5 mb-8">
+        <HealthCard bpm={bpm} theme={theme} isWatchConnected={watchStatus === 'connected'} />
+        <div className={`bg-gradient-to-br ${theme.primary} rounded-[2.5rem] p-6 flex flex-col justify-between relative overflow-hidden shadow-2xl group`}>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+          <Activity className="w-8 h-8 text-white/90" />
+          <div className="z-10 text-white">
+            <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-70">Active Goal</p>
+            <h2 className="text-2xl font-black tracking-tighter">{isRunning ? "TRACKING" : "WAITING"}</h2>
+            <div className="w-full bg-white/20 h-1.5 rounded-full mt-3 overflow-hidden">
+               <div className="bg-white h-full transition-all duration-1000" style={{ width: `${Math.min((distance/5)*100, 100)}%` }}></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4 mb-8">
+        <div className="flex justify-between items-end px-2">
+          <h2 className={`text-xs font-black flex items-center gap-2 ${theme.text} uppercase tracking-[0.2em]`}>
+            <MapIcon className={`w-4 h-4 ${theme.accent}`} />
+            Safety Radar
+          </h2>
+          <div className="flex items-center gap-1.5 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+             <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]"></div>
+             <span className="text-[9px] font-black text-red-500 uppercase tracking-tighter">Live Incidents</span>
+          </div>
+        </div>
+        <SafetyMap locationRisk={risk} theme={theme} aiAnalyzing={aiAnalyzing} />
+      </section>
+
+      <ReportPanel onSend={handleReport} theme={theme} />
+
+      {/* Control Bar */}
+      <div className={`fixed bottom-0 inset-x-0 p-8 z-50 transition-transform duration-700 ${showSummary ? 'translate-y-full' : 'translate-y-0'}`}>
+        <div className="max-w-md mx-auto flex items-center gap-5">
+          <button 
+            onClick={() => setShowSOS(true)} 
+            className="w-16 h-16 bg-red-600 rounded-[1.8rem] flex items-center justify-center text-white shadow-[0_15px_35px_rgba(220,38,38,0.4)] active:scale-90 transition-all hover:bg-red-700"
+          >
+            <PhoneCall className="w-7 h-7" />
+          </button>
+          
+          <button 
+            onClick={handleToggleRun}
+            className={`flex-1 h-16 rounded-[2rem] flex items-center justify-center gap-3 font-black text-lg tracking-tight shadow-2xl transition-all active:scale-95 ${
+              isRunning 
+                ? 'bg-slate-900 text-white shadow-slate-900/40 border border-white/10' 
+                : 'bg-blue-600 text-white shadow-blue-600/40'
+            }`}
+          >
+            {isRunning ? (
+              <><Square className="w-5 h-5 fill-current" /> STOP SESSION</>
+            ) : (
+              <><Play className="w-5 h-5 fill-current" /> START RUNNING</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Summary View */}
+      {showSummary && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-end animate-in fade-in duration-500">
+          <div className={`w-full ${theme.card} rounded-t-[4rem] p-10 pb-16 border-t border-white/20 animate-in slide-in-from-bottom-1/2 duration-700`}>
+            <div className="w-16 h-1.5 bg-slate-500/20 rounded-full mx-auto mb-10"></div>
+            
+            <div className="flex justify-center mb-10 relative">
+              <div className="absolute inset-0 bg-orange-400/20 blur-[60px] rounded-full animate-pulse"></div>
+              <div className="bg-gradient-to-tr from-orange-400 to-amber-200 p-8 rounded-[2.5rem] shadow-2xl shadow-orange-500/40 relative z-10 flex flex-col items-center">
+                <Watch className="w-14 h-14 text-white" />
+                <p className="text-[10px] text-white font-black mt-2">WATCH SYNCED</p>
+              </div>
+            </div>
+            
+            <h2 className={`text-center text-4xl font-black mb-3 tracking-tighter ${theme.text}`}>PERFECT RUN!</h2>
+            <p className="text-center text-slate-400 font-bold text-[11px] mb-12 uppercase tracking-[0.2em]">Summary Saved to Health Cloud</p>
+            
+            <div className="grid grid-cols-3 gap-6 mb-12">
+              <div className="text-center p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Dist.</p>
+                <p className={`text-2xl font-black ${theme.text}`}>{distance.toFixed(2)}</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">KM</p>
+              </div>
+              <div className="text-center p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Steps</p>
+                <p className={`text-2xl font-black ${theme.text}`}>{steps}</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">STEPS</p>
+              </div>
+              <div className="text-center p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Pace</p>
+                <p className={`text-2xl font-black ${theme.text}`}>7:15</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">/KM</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-5">
+              <button 
+                onClick={resetSession}
+                className="flex-1 bg-blue-600 text-white p-5 rounded-[2.2rem] font-black text-lg shadow-2xl shadow-blue-600/40 transition-all hover:bg-blue-700 active:scale-95"
+              >
+                FINISH LOG
+              </button>
+              <button 
+                onClick={() => setShowSummary(false)}
+                className={`p-5 rounded-[2.2rem] border ${theme.name === 'Night' ? 'border-white/10 text-white' : 'border-slate-200 text-slate-600'} hover:bg-white/5`}
+              >
+                <RotateCcw className="w-7 h-7" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SOS Screen */}
+      {showSOS && (
+        <div className="fixed inset-0 z-[70] bg-red-600/95 backdrop-blur-3xl flex flex-col items-center justify-center p-10 text-center animate-in zoom-in duration-300">
+          <div className="w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-[0_0_100px_#fff] animate-pulse mb-12">
+            <ShieldAlert className="text-red-600 w-16 h-16" />
+          </div>
+          <h2 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">SOS ACTIVATED</h2>
+          <p className="text-white/80 mb-14 text-sm font-bold uppercase tracking-widest leading-relaxed">Alert sent to nearest emergency services and community runners within 1km radius.</p>
+          <button 
+            onClick={() => setShowSOS(false)} 
+            className="bg-white/10 hover:bg-white/20 px-14 py-5 rounded-full text-white font-black text-xs uppercase tracking-[0.4em] border border-white/30 transition-all active:scale-95"
+          >
+            Abort Alert
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
