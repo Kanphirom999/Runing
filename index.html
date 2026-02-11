@@ -37,7 +37,13 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-// --- Theme Config ---
+/**
+ * NOTE FOR GITHUB PAGES DEPLOYMENT:
+ * หากพบว่าหน้าจอเพี้ยนหลัง Deploy ให้ตรวจสอบ:
+ * 1. package.json: ต้องมี "homepage": "https://<username>.github.io/<repo-name>"
+ * 2. การใช้ Relative Paths: ตรวจสอบให้แน่ใจว่าไม่ได้ใช้ absolute path / ที่ชี้ไปที่ root ของ server
+ */
+
 const getTheme = (hour) => {
   if (hour >= 5 && hour < 8) return {
     name: 'Sunrise',
@@ -213,57 +219,17 @@ const SafetyMap = ({ locationRisk, theme, aiAnalyzing }) => {
   return (
     <div className={`relative h-72 rounded-[3rem] overflow-hidden border-2 ${theme.name === 'Night' ? 'border-white/10' : 'border-white shadow-2xl'}`}>
       <div className={`absolute inset-0 transition-colors duration-1000 ${theme.mapBg}`}>
-        {/* Environment decorations */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
            <div className={`absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] ${theme.name === 'Night' ? 'from-blue-500/20 to-transparent' : 'from-slate-500/20 to-transparent'}`}></div>
         </div>
 
-        {/* Dynamic Map SVGs */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 300">
-           {/* Alternative Route (Gray) */}
-           <path 
-             d="M 50,150 L 150,100 L 250,100 L 350,150" 
-             stroke={theme.name === 'Night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 
-             strokeWidth="4" 
-             fill="none" 
-             strokeDasharray="5 5"
-           />
-           
-           {/* MAIN ROUTE */}
-           {/* Safe Part */}
-           <path 
-             d="M 50,150 Q 100,200 150,180" 
-             stroke="#3B82F6" 
-             strokeWidth="6" 
-             fill="none" 
-             strokeLinecap="round"
-             className="animate-[dash_20s_linear_infinite]"
-             strokeDasharray="12 12"
-           />
-           
-           {/* RED WARNING ROUTE (High Activity/Risk) */}
-           <path 
-             d="M 150,180 Q 250,130 300,180" 
-             stroke="#EF4444" 
-             strokeWidth="8" 
-             fill="none" 
-             strokeLinecap="round"
-             className="animate-pulse"
-             style={{ filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.6))' }}
-           />
-           
-           {/* Normal Route Continuation */}
-           <path 
-             d="M 300,180 T 380,150" 
-             stroke="#3B82F6" 
-             strokeWidth="6" 
-             fill="none" 
-             strokeLinecap="round"
-             strokeDasharray="12 12"
-           />
+           <path d="M 50,150 L 150,100 L 250,100 L 350,150" stroke={theme.name === 'Night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} strokeWidth="4" fill="none" strokeDasharray="5 5" />
+           <path d="M 50,150 Q 100,200 150,180" stroke="#3B82F6" strokeWidth="6" fill="none" strokeLinecap="round" className="animate-[dash_20s_linear_infinite]" strokeDasharray="12 12" />
+           <path d="M 150,180 Q 250,130 300,180" stroke="#EF4444" strokeWidth="8" fill="none" strokeLinecap="round" className="animate-pulse" style={{ filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 0.6))' }} />
+           <path d="M 300,180 T 380,150" stroke="#3B82F6" strokeWidth="6" fill="none" strokeLinecap="round" strokeDasharray="12 12" />
         </svg>
 
-        {/* Heatmap Points */}
         <div className="absolute top-[160px] left-[220px] group">
             <div className="w-12 h-12 bg-red-500/20 rounded-full animate-ping"></div>
             <div className="absolute inset-0 flex items-center justify-center">
@@ -271,7 +237,6 @@ const SafetyMap = ({ locationRisk, theme, aiAnalyzing }) => {
             </div>
         </div>
 
-        {/* User Marker */}
         <div className="absolute top-[150px] left-[50px] -translate-x-1/2 -translate-y-1/2">
             <div className="w-8 h-8 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center shadow-xl animate-bounce">
                 <Navigation className="w-4 h-4 text-white fill-white rotate-45" />
@@ -279,7 +244,6 @@ const SafetyMap = ({ locationRisk, theme, aiAnalyzing }) => {
         </div>
       </div>
 
-      {/* Legend & Stats Overlay */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
          <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -376,7 +340,7 @@ export default function App() {
   const [showSOS, setShowSOS] = useState(false);
 
   // Apple Watch Integration States
-  const [watchStatus, setWatchStatus] = useState('idle'); // idle, connecting, connected
+  const [watchStatus, setWatchStatus] = useState('idle'); 
   const [lastHaptic, setLastHaptic] = useState(null);
 
   const theme = useMemo(() => getTheme(currentTime.getHours()), [currentTime]);
@@ -393,8 +357,6 @@ export default function App() {
         setSeconds(s => s + 1);
         setDistance(d => d + 0.002); 
         setSteps(st => st + (Math.random() > 0.3 ? 2 : 1));
-        
-        // ถ้าต่อนาฬิกา Heart Rate จะเสถียรกว่า (จำลอง)
         setBpm(p => {
             const base = watchStatus === 'connected' ? 135 : 120;
             return Math.max(base, Math.min(p + (Math.random() > 0.5 ? 1 : -1), 175));
@@ -509,7 +471,6 @@ export default function App() {
 
       <HealthEngine theme={theme} weight={weight} height={height} setWeight={setWeight} setHeight={setHeight} />
 
-      {/* Main Stats with Steps */}
       <div className={`mb-6 p-8 rounded-[3rem] ${theme.card} border ${theme.name === 'Night' ? 'border-white/5 shadow-blue-950/40' : 'border-white shadow-2xl'} text-center relative overflow-hidden`}>
         {lastHaptic && (
             <div className="absolute inset-0 bg-orange-500/10 animate-pulse flex items-center justify-center z-20">
