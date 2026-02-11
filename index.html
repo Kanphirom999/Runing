@@ -1,260 +1,348 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Smart Running Companion</title>
-
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-
-body {
-  background: linear-gradient(135deg,#dbeafe,#f0f9ff);
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.container {
-  max-width: 420px;
-  margin: auto;
-}
-
-.card {
-  background: white;
-  border-radius: 24px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.time {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.timer {
-  font-size: 48px;
-  text-align: center;
-  margin: 20px 0;
-  font-weight: bold;
-}
-
-.stats {
-  display: flex;
-  justify-content: space-between;
-  text-align: center;
-  margin-top: 10px;
-}
-
-.stats div {
-  flex: 1;
-}
-
-button {
-  border: none;
-  padding: 14px;
-  border-radius: 14px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.start-btn {
-  width: 100%;
-  background: #2563eb;
-  color: white;
-  margin-top: 10px;
-}
-
-.stop-btn {
-  background: #111;
-  color: white;
-}
-
-.sos-btn {
-  background: red;
-  color: white;
-  width: 70px;
-  height: 70px;
-  border-radius: 20px;
-}
-
-.controls {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  margin-top: 5px;
-}
-
-.bpm {
-  font-size: 36px;
-  color: red;
-  font-weight: bold;
-}
-
-.danger {
-  background: #dc2626 !important;
-  color: white;
-}
-
-.footer-fixed {
-  position: fixed;
-  bottom: 20px;
-  left: 0;
-  right: 0;
-  max-width: 420px;
-  margin: auto;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Running Assistant - Prototype</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
+        .animate-dash { animation: dash 20s linear infinite; }
+        @keyframes rotate-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .rotate-slow { animation: rotate-slow 10s linear infinite; }
+        .custom-blur { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    </style>
 </head>
+<body class="bg-slate-50 transition-colors duration-1000">
 
-<body>
-<div class="container">
+    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-44 px-5 pt-5 overflow-x-hidden">
+        <!-- Content will be injected here by Alpine.js or Vanilla JS -->
+        
+        <!-- Companion Status Bar -->
+        <div id="watch-status-bar" class="mb-4 flex items-center justify-between px-5 py-3 rounded-2xl custom-blur border bg-white/5 border-white/10 transition-all duration-500">
+            <div class="flex items-center gap-3">
+                <div id="watch-icon-bg" class="p-2 rounded-xl bg-slate-500/20 transition-all">
+                    <i data-lucide="watch" class="w-4 h-4 text-slate-400"></i>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-widest opacity-60">Companion Device</p>
+                    <button onclick="connectWatch()" id="watch-btn" class="text-[10px] font-bold flex items-center gap-1 text-blue-500 underline">
+                        Pair Apple Watch
+                    </button>
+                </div>
+            </div>
+        </div>
 
-  <div class="card header">
-    <div>
-      <h2>Smart Companion</h2>
-      <small>Running Mode</small>
+        <!-- Header -->
+        <header id="main-header" class="flex justify-between items-center mb-6 p-4 rounded-3xl custom-blur border bg-white/40 border-white/40 shadow-xl transition-all">
+            <div class="flex items-center gap-3">
+                <div id="theme-icon-container" class="p-2.5 rounded-2xl bg-white shadow-inner">
+                    <i data-lucide="sun" id="theme-icon" class="w-5 h-5 text-yellow-500"></i>
+                </div>
+                <div>
+                    <h1 id="greeting" class="text-lg font-black tracking-tight text-slate-900">กำลังโหลด...</h1>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Smart Companion</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div id="clock" class="text-xl font-mono font-black text-slate-900">00:00:00</div>
+                <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-[8px] text-green-500 font-black uppercase tracking-widest">Live Sync</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Health Engine Card -->
+        <div id="health-card" class="mb-6 p-6 rounded-[2.5rem] bg-white/70 custom-blur border border-white shadow-2xl relative overflow-hidden">
+            <div class="flex items-center justify-between mb-6 relative z-10">
+                <h2 class="font-black flex items-center gap-2 text-sm uppercase tracking-widest text-slate-800">
+                    <i data-lucide="scale" class="w-5 h-5 text-blue-600"></i>
+                    Health Engine
+                </h2>
+                <button class="bg-slate-500/10 p-1.5 px-4 rounded-full text-blue-500 text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">
+                    Setup Profile
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-slate-100/50 p-4 rounded-3xl text-center border border-white/50">
+                    <p class="text-[10px] text-slate-400 font-black mb-1 uppercase tracking-widest">BMI Status</p>
+                    <p class="text-2xl font-black text-slate-900">24.5</p>
+                </div>
+                <div class="bg-slate-100/50 p-4 rounded-3xl text-center border border-white/50">
+                    <p class="text-[10px] text-slate-400 font-black mb-1 uppercase tracking-widest">Ideal Weight</p>
+                    <p class="text-2xl font-black text-slate-900">68.2</p>
+                </div>
+            </div>
+            <div class="p-4 bg-blue-50 rounded-3xl border border-blue-100 flex items-center gap-4">
+                <div class="bg-blue-500 p-2 rounded-xl text-white">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-slate-500">AI Goal</p>
+                    <p class="text-[12px] font-bold text-blue-600 leading-tight">Zone 2 (Endurance Run) 5.0 KM</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Timer Display -->
+        <div id="timer-display" class="mb-6 p-8 rounded-[3rem] bg-white/70 custom-blur border border-white shadow-2xl text-center relative overflow-hidden">
+            <div id="timer-bg-glow" class="absolute -top-10 -left-10 w-48 h-48 rounded-full blur-[80px] opacity-20 bg-blue-400 transition-colors duration-500"></div>
+            
+            <div class="flex justify-center items-center gap-2 mb-4 relative z-10">
+                <i data-lucide="clock" class="w-4 h-4 text-blue-600"></i>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Session Progress</span>
+            </div>
+            <h2 id="main-timer" class="text-7xl font-mono font-black mb-8 tracking-tighter text-slate-900 relative z-10">00:00:00</h2>
+            
+            <div class="grid grid-cols-3 gap-2 border-t border-slate-500/10 pt-8 relative z-10">
+                <div class="flex flex-col items-center">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Dist.</p>
+                    <p class="text-2xl font-black text-slate-900"><span id="stat-dist">0.00</span> <span class="text-[8px] font-bold opacity-40">KM</span></p>
+                </div>
+                <div class="w-px h-8 bg-slate-500/10 self-center"></div>
+                <div class="flex flex-col items-center">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Steps</p>
+                    <p id="stat-steps" class="text-2xl font-black text-slate-900">0</p>
+                </div>
+                <div class="w-px h-8 bg-slate-500/10 self-center"></div>
+                <div class="flex flex-col items-center">
+                    <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1.5">Energy</p>
+                    <p class="text-2xl font-black text-slate-900"><span id="stat-kcal">0</span> <span class="text-[8px] font-bold opacity-40">KCAL</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heart Rate & Action -->
+        <div class="grid grid-cols-2 gap-5 mb-8">
+            <div id="bpm-card" class="p-6 rounded-[2.5rem] bg-white/70 border border-white shadow-2xl relative overflow-hidden transition-all duration-500">
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <div class="bg-red-500/10 p-3 rounded-2xl">
+                        <i data-lucide="heart" class="w-6 h-6 text-red-500 animate-pulse"></i>
+                    </div>
+                    <span id="bpm-source" class="text-[8px] font-black text-slate-400 uppercase">iPhone Sensor</span>
+                </div>
+                <div class="flex items-baseline gap-1 relative z-10">
+                    <span id="stat-bpm" class="text-5xl font-black tracking-tighter text-slate-900">72</span>
+                    <span class="text-slate-400 text-xs font-bold uppercase tracking-widest">Bpm</span>
+                </div>
+            </div>
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] p-6 flex flex-col justify-between relative overflow-hidden shadow-2xl">
+                <i data-lucide="activity" class="w-8 h-8 text-white/90"></i>
+                <div class="z-10 text-white">
+                    <p class="text-[10px] font-black uppercase tracking-widest mb-1 opacity-70">Route Safety</p>
+                    <h2 class="text-2xl font-black tracking-tighter">SECURED</h2>
+                    <div class="w-full bg-white/20 h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div id="goal-progress" class="bg-white h-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Radar -->
+        <div class="mb-8">
+            <h2 class="text-xs font-black flex items-center gap-2 text-slate-800 uppercase tracking-[0.2em] mb-4">
+                <i data-lucide="map" class="w-4 h-4 text-blue-600"></i>
+                Safety Radar
+            </h2>
+            <div id="map-radar" class="relative h-64 rounded-[3rem] overflow-hidden border-2 border-white shadow-2xl bg-blue-100/50">
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 300">
+                    <path d="M 50,150 L 150,100 L 250,100 L 350,150" stroke="rgba(0,0,0,0.1)" stroke-width="4" fill="none" stroke-dasharray="5 5" />
+                    <path d="M 50,150 Q 100,200 150,180" stroke="#3B82F6" stroke-width="6" fill="none" stroke-linecap="round" class="animate-dash" stroke-dasharray="12 12" />
+                    <circle cx="50" cy="150" r="6" fill="#3B82F6" />
+                    <circle cx="150" cy="180" r="6" fill="#EF4444" class="animate-pulse" />
+                </svg>
+                <div class="absolute top-4 left-4">
+                    <div class="bg-black/60 custom-blur px-3 py-1.5 rounded-2xl text-[9px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                        Live Incident Area
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Bar -->
+        <div id="control-bar" class="fixed bottom-0 inset-x-0 p-8 z-50 transition-transform duration-700">
+            <div class="max-w-md mx-auto flex items-center gap-5">
+                <button onclick="activateSOS()" class="w-16 h-16 bg-red-600 rounded-[1.8rem] flex items-center justify-center text-white shadow-[0_15px_35px_rgba(220,38,38,0.4)] active:scale-90 transition-all">
+                    <i data-lucide="phone-call" class="w-7 h-7"></i>
+                </button>
+                <button id="toggle-btn" onclick="toggleRunning()" class="flex-1 h-16 rounded-[2rem] bg-blue-600 text-white flex items-center justify-center gap-3 font-black text-lg tracking-tight shadow-2xl transition-all active:scale-95">
+                    <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                    START RUNNING
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Modal -->
+        <div id="summary-modal" class="fixed inset-0 z-[60] bg-slate-950/90 custom-blur hidden flex-items-end">
+            <div class="w-full bg-white rounded-t-[4rem] p-10 pb-16 mt-auto border-t border-white/20 animate-slide-up">
+                <h2 class="text-center text-4xl font-black mb-3 tracking-tighter text-slate-900">PERFECT RUN!</h2>
+                <p class="text-center text-slate-400 font-bold text-[11px] mb-12 uppercase tracking-[0.2em]">Data Synced to Health Cloud</p>
+                <div class="grid grid-cols-3 gap-6 mb-12 text-center">
+                    <div class="p-4 bg-slate-50 rounded-3xl">
+                        <p class="text-[9px] font-black text-slate-400 mb-1">KM</p>
+                        <p id="sum-dist" class="text-xl font-black">0.00</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-3xl">
+                        <p class="text-[9px] font-black text-slate-400 mb-1">STEPS</p>
+                        <p id="sum-steps" class="text-xl font-black">0</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-3xl">
+                        <p class="text-[9px] font-black text-slate-400 mb-1">KCAL</p>
+                        <p id="sum-kcal" class="text-xl font-black">0</p>
+                    </div>
+                </div>
+                <button onclick="closeSummary()" class="w-full bg-blue-600 text-white p-5 rounded-[2.2rem] font-black text-lg">DONE</button>
+            </div>
+        </div>
     </div>
-    <div class="time" id="clock">--:--:--</div>
-  </div>
 
-  <div class="card">
-    <h3>Health Profile</h3>
-    <label>Weight (kg)</label>
-    <input type="number" id="weight" value="75">
-    <label>Height (cm)</label>
-    <input type="number" id="height" value="175">
-    <button class="start-btn" onclick="calculateBMI()">Calculate</button>
-    <p id="bmiResult" style="margin-top:10px;"></p>
-  </div>
+    <script>
+        // State Management
+        let isRunning = false;
+        let seconds = 0;
+        let distance = 0;
+        let steps = 0;
+        let bpm = 72;
+        let watchConnected = false;
+        let timerInterval = null;
 
-  <div class="card">
-    <h3>Session</h3>
-    <div class="timer" id="timer">00:00:00</div>
-    <div class="stats">
-      <div>
-        <small>Distance</small>
-        <div id="distance">0.00 km</div>
-      </div>
-      <div>
-        <small>Steps</small>
-        <div id="steps">0</div>
-      </div>
-      <div>
-        <small>Energy</small>
-        <div id="energy">0 kcal</div>
-      </div>
-    </div>
-  </div>
+        // Initialize Lucide Icons
+        lucide.createIcons();
 
-  <div class="card" id="heartCard">
-    <h3>Heart Rate</h3>
-    <div class="bpm" id="bpm">110 BPM</div>
-  </div>
+        // Clock Update
+        function updateClock() {
+            const now = new Date();
+            const h = now.getHours();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('th-TH');
+            
+            // Theme Engine (Day/Night)
+            const body = document.body;
+            const header = document.getElementById('main-header');
+            const greeting = document.getElementById('greeting');
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (h >= 18 || h < 6) {
+                body.className = "bg-slate-950 transition-colors duration-1000";
+                header.className = "flex justify-between items-center mb-6 p-4 rounded-3xl custom-blur border bg-white/5 border-white/10 shadow-2xl transition-all";
+                greeting.className = "text-lg font-black tracking-tight text-white";
+                greeting.innerText = "วิ่งกลางคืนระวังด้วยนะ";
+                themeIcon.setAttribute('data-lucide', 'moon');
+                document.getElementById('theme-icon-container').className = "p-2.5 rounded-2xl bg-blue-500/20";
+                themeIcon.className = "w-5 h-5 text-blue-400";
+            } else {
+                body.className = "bg-slate-50 transition-colors duration-1000";
+                greeting.innerText = "สวัสดีตอนเช้า";
+                themeIcon.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
 
-  <div class="card">
-    <h3>Community Report</h3>
-    <input type="text" id="reportText" placeholder="รายงานจุดเสี่ยง...">
-    <button class="start-btn" onclick="analyzeReport()">Send Report</button>
-  </div>
+        // Watch Pairing Logic
+        function connectWatch() {
+            const btn = document.getElementById('watch-btn');
+            const iconBg = document.getElementById('watch-icon-bg');
+            btn.innerText = "Connecting...";
+            btn.className = "text-[10px] font-bold text-orange-500 animate-pulse";
+            
+            setTimeout(() => {
+                watchConnected = true;
+                btn.innerText = "Apple Watch Ultra Connected";
+                btn.className = "text-[10px] font-bold text-orange-500";
+                iconBg.className = "p-2 rounded-xl bg-orange-500 shadow-lg shadow-orange-500/30";
+                document.getElementById('bpm-source').innerText = "Apple Watch Ultra";
+                lucide.createIcons();
+            }, 1500);
+        }
 
-</div>
+        // Toggle Running Logic
+        function toggleRunning() {
+            const btn = document.getElementById('toggle-btn');
+            const glow = document.getElementById('timer-bg-glow');
+            
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(timerInterval);
+                btn.innerHTML = '<i data-lucide="play" class="w-5 h-5 fill-current"></i> START RUNNING';
+                btn.className = "flex-1 h-16 rounded-[2rem] bg-blue-600 text-white flex items-center justify-center gap-3 font-black text-lg tracking-tight shadow-2xl transition-all active:scale-95";
+                glow.className = "absolute -top-10 -left-10 w-48 h-48 rounded-full blur-[80px] opacity-20 bg-blue-400";
+                showSummary();
+            } else {
+                isRunning = true;
+                btn.innerHTML = '<i data-lucide="square" class="w-5 h-5 fill-current"></i> STOP SESSION';
+                btn.className = "flex-1 h-16 rounded-[2rem] bg-slate-900 text-white flex items-center justify-center gap-3 font-black text-lg tracking-tight shadow-2xl transition-all active:scale-95";
+                glow.className = "absolute -top-10 -left-10 w-48 h-48 rounded-full blur-[80px] opacity-20 bg-green-400";
+                
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    distance += 0.002;
+                    steps += Math.floor(Math.random() * 3);
+                    bpm = 130 + Math.floor(Math.random() * 15);
+                    updateStats();
+                }, 1000);
+            }
+            lucide.createIcons();
+        }
 
-<div class="footer-fixed">
-  <div class="controls">
-    <button class="sos-btn" onclick="alert('SOS ACTIVATED')">SOS</button>
-    <button id="toggleBtn" class="start-btn" onclick="toggleRun()">START RUNNING</button>
-  </div>
-</div>
+        function updateStats() {
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            
+            document.getElementById('main-timer').innerText = `${h}:${m}:${s}`;
+            document.getElementById('stat-dist').innerText = distance.toFixed(2);
+            document.getElementById('stat-steps').innerText = steps;
+            document.getElementById('stat-kcal').innerText = (distance * 65).toFixed(0);
+            document.getElementById('stat-bpm').innerText = bpm;
+            
+            // Progress Bar
+            const progress = Math.min((distance / 5.0) * 100, 100);
+            document.getElementById('goal-progress').style.width = progress + '%';
 
-<script>
-let isRunning = false;
-let seconds = 0;
-let distance = 0;
-let steps = 0;
-let bpm = 110;
-let interval;
+            // Heart Rate Alert
+            const bpmCard = document.getElementById('bpm-card');
+            if (bpm > 165) {
+                bpmCard.classList.add('bg-red-600', 'scale-105');
+                bpmCard.classList.remove('bg-white/70');
+            } else {
+                bpmCard.classList.remove('bg-red-600', 'scale-105');
+                bpmCard.classList.add('bg-white/70');
+            }
+        }
 
-function updateClock(){
-  const now = new Date();
-  document.getElementById("clock").innerText =
-    now.toLocaleTimeString('th-TH');
-}
-setInterval(updateClock,1000);
+        function showSummary() {
+            document.getElementById('sum-dist').innerText = distance.toFixed(2);
+            document.getElementById('sum-steps').innerText = steps;
+            document.getElementById('sum-kcal').innerText = (distance * 65).toFixed(0);
+            document.getElementById('summary-modal').classList.remove('hidden');
+            document.getElementById('summary-modal').classList.add('flex');
+        }
 
-function formatTime(s){
-  let h = String(Math.floor(s/3600)).padStart(2,'0');
-  let m = String(Math.floor((s%3600)/60)).padStart(2,'0');
-  let sec = String(s%60).padStart(2,'0');
-  return `${h}:${m}:${sec}`;
-}
+        function closeSummary() {
+            document.getElementById('summary-modal').classList.add('hidden');
+            document.getElementById('summary-modal').classList.remove('flex');
+            // Reset Session
+            seconds = 0;
+            distance = 0;
+            steps = 0;
+            updateStats();
+        }
 
-function toggleRun(){
-  const btn = document.getElementById("toggleBtn");
-  if(!isRunning){
-    isRunning = true;
-    btn.innerText = "STOP SESSION";
-    btn.classList.remove("start-btn");
-    btn.classList.add("stop-btn");
-
-    interval = setInterval(()=>{
-      seconds++;
-      distance += 0.002;
-      steps += Math.random() > 0.3 ? 2 : 1;
-      bpm = Math.min(175, bpm + (Math.random()>0.5?1:-1));
-
-      document.getElementById("timer").innerText = formatTime(seconds);
-      document.getElementById("distance").innerText = distance.toFixed(2)+" km";
-      document.getElementById("steps").innerText = steps;
-      document.getElementById("energy").innerText = Math.floor(distance*65)+" kcal";
-      document.getElementById("bpm").innerText = bpm+" BPM";
-
-      if(bpm > 165){
-        document.getElementById("heartCard").classList.add("danger");
-      }
-    },1000);
-
-  } else {
-    isRunning = false;
-    clearInterval(interval);
-    btn.innerText = "START RUNNING";
-    btn.classList.remove("stop-btn");
-    btn.classList.add("start-btn");
-  }
-}
-
-function calculateBMI(){
-  const w = parseFloat(document.getElementById("weight").value);
-  const h = parseFloat(document.getElementById("height").value)/100;
-  const bmi = (w/(h*h)).toFixed(1);
-  document.getElementById("bmiResult").innerText = "BMI: "+bmi;
-}
-
-function analyzeReport(){
-  const text = document.getElementById("reportText").value;
-  const dangerWords = ["มืด","อันตราย","เปลี่ยว","สุนัข","ไฟ"];
-  const isDanger = dangerWords.some(w=>text.includes(w));
-
-  if(isDanger){
-    alert("⚠️ ตรวจพบจุดเสี่ยง ระบบเพิ่มระดับความระวัง");
-  } else {
-    alert("รายงานถูกบันทึกแล้ว");
-  }
-}
-</script>
-
+        function activateSOS() {
+            if(confirm("ยืนยันการเปิดใช้งาน SOS? ระบบจะส่งตำแหน่งปัจจุบันให้กู้ภัยทันที")) {
+                alert("ส่งสัญญาณ SOS เรียบร้อยแล้ว ทีมกู้ภัยกำลังเดินทางไปหาคุณ");
+            }
+        }
+    </script>
 </body>
 </html>
